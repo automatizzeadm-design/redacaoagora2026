@@ -1,24 +1,330 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import { Camera, Loader2, Scale, ScanLine, Sparkles, Upload } from "lucide-react";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import { Resultado } from "@/components/Resultado";
+import { corrigirRedacao } from "@/lib/corretor";
+import type { Correcao } from "@/lib/schema";
+import { cn } from "@/lib/utils";
+
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Redação Agora · Correção de redação do ENEM por foto" },
+      {
+        name: "description",
+        content:
+          "Tire uma foto da sua redação e receba a correção nas 5 competências, com os pontos que dependem do corretor, o seu texto reescrito no nível da nota 1000 e um plano de estudo.",
+      },
+    ],
+  }),
+  component: Pagina,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+type Estado =
+  | { fase: "inicio" }
+  | { fase: "lendo" }
+  | { fase: "pronto"; correcao: Correcao }
+  | { fase: "erro"; mensagem: string };
+
+const TIPOS_ACEITOS = ["image/jpeg", "image/png", "image/webp"];
+const TAMANHO_MAXIMO = 8 * 1024 * 1024;
+
+function Pagina() {
+  const [estado, setEstado] = useState<Estado>({ fase: "inicio" });
+  const [arquivo, setArquivo] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [tema, setTema] = useState("");
+  const [arrastando, setArrastando] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!arquivo) {
+      setPreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(arquivo);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [arquivo]);
+
+  const receber = (f: File | undefined) => {
+    if (!f) return;
+    if (!TIPOS_ACEITOS.includes(f.type)) {
+      setEstado({ fase: "erro", mensagem: "Envie uma foto em JPG, PNG ou WEBP." });
+      return;
+    }
+    if (f.size > TAMANHO_MAXIMO) {
+      setEstado({ fase: "erro", mensagem: "A foto passou de 8 MB. Tente uma imagem menor." });
+      return;
+    }
+    setArquivo(f);
+    setEstado({ fase: "inicio" });
+  };
+
+  const enviar = async () => {
+    if (!arquivo) return;
+    setEstado({ fase: "lendo" });
+    try {
+      const base64 = await lerBase64(arquivo);
+      const correcao = await corrigirRedacao({
+        data: {
+          imagemBase64: base64,
+          mediaType: arquivo.type,
+          ...(tema.trim() ? { tema: tema.trim() } : {}),
+        },
+      });
+      setEstado({ fase: "pronto", correcao });
+    } catch (e) {
+      setEstado({
+        fase: "erro",
+        mensagem: e instanceof Error ? e.message : "Algo falhou na correção. Tente de novo.",
+      });
+    }
+  };
+
+  const recomecar = () => {
+    setArquivo(null);
+    setTema("");
+    setEstado({ fase: "inicio" });
+  };
+
+  if (estado.fase === "pronto") {
+    return (
+      <main className="min-h-screen pt-8">
+        <Resultado c={estado.correcao} onNova={recomecar} />
+      </main>
+    );
+  }
+
+  if (estado.fase === "lendo") {
+    return <Lendo preview={preview} />;
+  }
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="min-h-screen">
+      <div className="mx-auto w-full max-w-[980px] px-5 pb-24 pt-16 sm:pt-24">
+        <header className="animate-rise text-center">
+          <p className="eyebrow">Correção de redação ENEM</p>
+          <h1 className="mx-auto mt-4 max-w-[16ch] text-balance text-[2.6rem] leading-[1.02] sm:text-[3.6rem]">
+            Sua redação corrigida como a banca corrige
+          </h1>
+          <p className="mx-auto mt-5 max-w-[54ch] text-[1rem] leading-relaxed text-muted-foreground">
+            Tire uma foto da folha. Em minutos você recebe as cinco competências, os pontos que
+            dependem de qual corretor pegar, e o seu texto reescrito no nível da nota 1000.
+          </p>
+        </header>
+
+        {/* Os três diferenciais, ditos sem enrolação */}
+        <div className="animate-rise mt-12 grid gap-3 sm:grid-cols-3">
+          <Pilar
+            icone={<Scale className="h-4 w-4" />}
+            titulo="Dois corretores, não um"
+            texto="No ENEM sua redação é lida por dois. Mostramos onde eles discordariam — é exatamente onde seu texto está frágil."
+          />
+          <Pilar
+            icone={<Sparkles className="h-4 w-4" />}
+            titulo="Seu texto, elevado"
+            texto="Não é redação modelo de outra pessoa. É o seu parágrafo, com o seu argumento, escrito no nível do 1000."
+          />
+          <Pilar
+            icone={<ScanLine className="h-4 w-4" />}
+            titulo="Risco de banca"
+            texto="Letra, linhas e margens lidos da foto. Se a máquina tropeça para ler, o corretor humano também."
+          />
+        </div>
+
+        {/* Envio */}
+        <section className="animate-rise panel mt-10 p-5 sm:p-7">
+          <div
+            onDragOver={(e) => {
+              e.preventDefault();
+              setArrastando(true);
+            }}
+            onDragLeave={() => setArrastando(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setArrastando(false);
+              receber(e.dataTransfer.files?.[0]);
+            }}
+            onClick={() => inputRef.current?.click()}
+            className={cn(
+              "relative cursor-pointer overflow-hidden rounded-xl border-2 border-dashed transition-colors",
+              arrastando ? "border-primary bg-primary/[0.06]" : "border-border hover:border-primary/45",
+            )}
+          >
+            <input
+              ref={inputRef}
+              type="file"
+              accept={TIPOS_ACEITOS.join(",")}
+              className="hidden"
+              onChange={(e) => receber(e.target.files?.[0])}
+            />
+
+            {preview ? (
+              <div className="flex flex-col items-center gap-4 p-5">
+                <img
+                  src={preview}
+                  alt="Prévia da sua redação"
+                  className="max-h-[380px] w-auto rounded-lg shadow-[var(--shadow-paper)]"
+                />
+                <p className="text-[0.82rem] text-muted-foreground">
+                  {arquivo?.name} · toque para trocar
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary">
+                  <Camera className="h-6 w-6 text-muted-foreground" />
+                </span>
+                <p className="text-[1rem] font-medium">Arraste a foto ou toque para escolher</p>
+                <p className="max-w-[42ch] text-[0.82rem] leading-relaxed text-muted-foreground">
+                  Fotografe a folha inteira, de frente, com boa luz. JPG, PNG ou WEBP até 8 MB.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-5">
+            <label
+              htmlFor="tema"
+              className="mb-2 block text-[0.8rem] font-medium text-muted-foreground"
+            >
+              Tema da proposta{" "}
+              <span className="font-normal text-muted-foreground/60">(opcional)</span>
+            </label>
+            <input
+              id="tema"
+              value={tema}
+              onChange={(e) => setTema(e.target.value)}
+              placeholder="Ex.: Desafios para a valorização de comunidades e povos tradicionais no Brasil"
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-[0.9rem] outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/60 focus:ring-2 focus:ring-ring"
+            />
+            <p className="mt-1.5 text-[0.76rem] text-muted-foreground">
+              Sem o tema eu deduzo pelo texto — mas com ele a avaliação de fuga fica precisa.
+            </p>
+          </div>
+
+          {estado.fase === "erro" && (
+            <p className="mt-4 rounded-xl border border-nota-critica/40 bg-nota-critica/[0.07] px-4 py-3 text-[0.85rem] text-foreground">
+              {estado.mensagem}
+            </p>
+          )}
+
+          <button
+            onClick={enviar}
+            disabled={!arquivo}
+            className={cn(
+              "mt-5 flex w-full items-center justify-center gap-2 rounded-xl px-6 py-4 text-[0.95rem] font-semibold transition-all",
+              arquivo
+                ? "bg-primary text-primary-foreground hover:-translate-y-0.5 hover:shadow-[var(--shadow-lift)]"
+                : "cursor-not-allowed bg-secondary text-muted-foreground",
+            )}
+          >
+            <Upload className="h-4 w-4" />
+            Corrigir minha redação
+          </button>
+        </section>
+      </div>
+    </main>
   );
+}
+
+function Pilar({
+  icone,
+  titulo,
+  texto,
+}: {
+  icone: React.ReactNode;
+  titulo: string;
+  texto: string;
+}) {
+  return (
+    <article className="panel p-5">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/12 text-primary">
+        {icone}
+      </span>
+      <h3 className="mt-3 text-[1rem]">{titulo}</h3>
+      <p className="mt-1.5 text-[0.84rem] leading-relaxed text-muted-foreground">{texto}</p>
+    </article>
+  );
+}
+
+/* ---------------- Leitura em andamento ---------------- */
+
+const ETAPAS = [
+  "Lendo sua letra na foto",
+  "Transcrevendo o texto",
+  "Avaliando as cinco competências",
+  "Passando pelo corretor rigoroso",
+  "Passando pelo corretor generoso",
+  "Cruzando as duas leituras",
+  "Reescrevendo seus parágrafos",
+];
+
+function Lendo({ preview }: { preview: string | null }) {
+  const [etapa, setEtapa] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setEtapa((e) => (e < ETAPAS.length - 1 ? e + 1 : e));
+    }, 7000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  return (
+    <main className="flex min-h-screen items-center justify-center px-5 py-16">
+      <div className="w-full max-w-[440px] text-center">
+        {preview && (
+          <div className="relative mx-auto mb-8 w-fit overflow-hidden rounded-xl">
+            <img
+              src={preview}
+              alt=""
+              className="max-h-[300px] w-auto rounded-xl opacity-70 grayscale"
+            />
+            {/* A varredura percorrendo a folha */}
+            <div className="animate-sweep pointer-events-none absolute inset-x-0 h-1/2 bg-[linear-gradient(to_bottom,transparent,oklch(0.86_0.19_122/0.18)_60%,oklch(0.86_0.19_122/0.55))]" />
+          </div>
+        )}
+
+        <div className="flex items-center justify-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          <p className="text-[1rem] font-medium">{ETAPAS[etapa]}</p>
+        </div>
+
+        <div className="mt-6 grid gap-1.5">
+          {ETAPAS.map((e, i) => (
+            <div
+              key={e}
+              className={cn(
+                "h-1 rounded-full transition-colors duration-500",
+                i < etapa ? "bg-primary/70" : i === etapa ? "bg-primary animate-pulse-soft" : "bg-secondary",
+              )}
+            />
+          ))}
+        </div>
+
+        <p className="mt-6 text-[0.82rem] leading-relaxed text-muted-foreground">
+          A correção completa leva alguns minutos. É o tempo de ler sua letra, avaliar duas vezes e
+          reescrever cada parágrafo — não feche esta tela.
+        </p>
+      </div>
+    </main>
+  );
+}
+
+/* ---------------- Utilidades ---------------- */
+
+function lerBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const r = reader.result;
+      if (typeof r !== "string") return reject(new Error("Falha ao ler a imagem."));
+      // Remove o prefixo "data:image/jpeg;base64," — a API quer só o conteúdo
+      resolve(r.slice(r.indexOf(",") + 1));
+    };
+    reader.onerror = () => reject(new Error("Falha ao ler a imagem."));
+    reader.readAsDataURL(file);
+  });
 }
