@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BookOpen,
   Check,
+  Download,
   Eye,
   ScanLine,
   Scale,
@@ -48,7 +49,7 @@ export function Resultado({ c, onNova }: { c: Correcao; onNova: () => void }) {
         </TabsList>
 
         {/* ---------------- PANORAMA ---------------- */}
-        <TabsContent value="panorama" className="mt-6 grid gap-5 lg:grid-cols-[1fr_400px]">
+        <TabsContent forceMount value="panorama" className="mt-6 grid gap-5 lg:grid-cols-[1fr_400px] data-[state=inactive]:hidden">
           <div className="grid gap-5">
             <section className="panel p-5">
               <p className="eyebrow">As cinco competências</p>
@@ -90,7 +91,7 @@ export function Resultado({ c, onNova }: { c: Correcao; onNova: () => void }) {
         </TabsContent>
 
         {/* ---------------- ESPELHO ---------------- */}
-        <TabsContent value="espelho" className="mt-6">
+        <TabsContent forceMount value="espelho" className="mt-6 data-[state=inactive]:hidden">
           <section className="panel p-5">
             <p className="eyebrow">Redação espelhada</p>
             <h2 className="mt-1 text-[1.35rem]">Sua ideia, escrita no nível da nota 1000</h2>
@@ -109,7 +110,7 @@ export function Resultado({ c, onNova }: { c: Correcao; onNova: () => void }) {
         </TabsContent>
 
         {/* ---------------- ERROS ---------------- */}
-        <TabsContent value="erros" className="mt-6 grid gap-3">
+        <TabsContent forceMount value="erros" className="mt-6 grid gap-3 data-[state=inactive]:hidden">
           {c.erros.length === 0 && (
             <p className="panel p-6 text-center text-muted-foreground">
               Nenhum desvio apontado nesta redação.
@@ -121,7 +122,7 @@ export function Resultado({ c, onNova }: { c: Correcao; onNova: () => void }) {
         </TabsContent>
 
         {/* ---------------- PLANO ---------------- */}
-        <TabsContent value="plano" className="mt-6 grid gap-5">
+        <TabsContent forceMount value="plano" className="mt-6 grid gap-5 data-[state=inactive]:hidden">
           <section className="panel border-primary/30 bg-primary/[0.04] p-6">
             <p className="eyebrow text-primary/80">O ponto único</p>
             <p className="mt-2 font-display text-[1.5rem] leading-snug text-foreground">
@@ -179,12 +180,27 @@ function Placar({
           </p>
         </div>
 
-        <button
-          onClick={onNova}
-          className="rounded-xl border border-border px-4 py-2.5 text-[0.82rem] font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
-        >
-          Corrigir outra
-        </button>
+        <div className="no-imprimir flex flex-wrap gap-2">
+          {/*
+            O PDF sai pela impressão do próprio navegador ("Salvar como PDF"),
+            com a folha de estilo de impressão cuidando do resto. Funciona no
+            celular e no computador, sem biblioteca nenhuma e sem enviar a
+            correção para lugar algum.
+          */}
+          <button
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-border px-4 py-2.5 text-[0.82rem] font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Baixar PDF
+          </button>
+          <button
+            onClick={onNova}
+            className="rounded-xl border border-border px-4 py-2.5 text-[0.82rem] font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+          >
+            Corrigir outra
+          </button>
+        </div>
       </div>
 
       <div className="relative mt-6 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-4 text-[0.8rem]">

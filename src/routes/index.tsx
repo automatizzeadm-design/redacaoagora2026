@@ -1,13 +1,29 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Camera, Loader2, Scale, ScanLine, Sparkles, Upload } from "lucide-react";
+import {
+  Camera,
+  Loader2,
+  Scale,
+  ScanLine,
+  Sparkles,
+  TrendingUp,
+  Upload,
+  User,
+} from "lucide-react";
 
 import { Resultado } from "@/components/Resultado";
 import { corrigirRedacao } from "@/lib/corretor";
+import { registrarCorrecao } from "@/lib/perfil";
+import { salvarTreino } from "@/lib/treino";
+import { usePerfil } from "@/lib/usePerfil";
 import type { Correcao } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
+  // O banco de temas manda o enunciado sorteado por aqui, para a avaliação de
+  // fuga ao tema ser feita contra o texto exato em vez de uma dedução.
+  validateSearch: (busca: Record<string, unknown>): { tema?: string } =>
+    typeof busca["tema"] === "string" ? { tema: busca["tema"] } : {},
   head: () => ({
     meta: [
       { title: "Redação Agora · Correção de redação do ENEM por foto" },
@@ -31,10 +47,11 @@ const TIPOS_ACEITOS = ["image/jpeg", "image/png", "image/webp"];
 const TAMANHO_MAXIMO = 8 * 1024 * 1024;
 
 function Pagina() {
+  const { tema: temaSorteado } = Route.useSearch();
   const [estado, setEstado] = useState<Estado>({ fase: "inicio" });
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [tema, setTema] = useState("");
+  const [tema, setTema] = useState(temaSorteado ?? "");
   const [arrastando, setArrastando] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +91,17 @@ function Pagina() {
           ...(tema.trim() ? { tema: tema.trim() } : {}),
         },
       });
+      // Guarda o resumo antes de mostrar: é o que alimenta a área de desempenho.
+      // Se a gravação falhar (storage cheio ou bloqueado), a correção continua
+      // aparecendo normalmente — perder o histórico não pode perder a correção.
+      try {
+        registrarCorrecao(correcao, tema);
+        // O treino terminou: a folha virou correção. Limpa para o banco de
+        // temas não continuar mostrando "escrevendo agora" indefinidamente.
+        salvarTreino(null);
+      } catch (err) {
+        console.warn("[perfil] não consegui guardar esta correção no histórico:", err);
+      }
       setEstado({ fase: "pronto", correcao });
     } catch (e) {
       setEstado({
@@ -91,8 +119,9 @@ function Pagina() {
 
   if (estado.fase === "pronto") {
     return (
-      <main className="min-h-screen pt-8">
+      <main className="min-h-screen pb-28 pt-8 sm:pb-8">
         <Resultado c={estado.correcao} onNova={recomecar} />
+        <AvisoHistorico />
       </main>
     );
   }
@@ -201,7 +230,17 @@ function Pagina() {
               className="w-full rounded-xl border border-input bg-background px-4 py-3 text-[0.9rem] outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/60 focus:ring-2 focus:ring-ring"
             />
             <p className="mt-1.5 text-[0.76rem] text-muted-foreground">
-              Sem o tema eu deduzo pelo texto — mas com ele a avaliação de fuga fica precisa.
+              {temaSorteado ? (
+                <span className="text-primary">Tema vindo do banco — já preenchido.</span>
+              ) : (
+                <>
+                  Sem o tema eu deduzo pelo texto — mas com ele a avaliação de fuga fica precisa.{" "}
+                  <Link to="/temas" className="text-primary underline-offset-2 hover:underline">
+                    Sortear um tema
+                  </Link>
+                  .
+                </>
+              )}
             </p>
           </div>
 
@@ -227,6 +266,55 @@ function Pagina() {
         </section>
       </div>
     </main>
+  );
+}
+
+/**
+ * Aparece depois da correção, no fim da página.
+ *
+ * A correção acabou de ser guardada no histórico; este é o momento em que a
+ * comparação com as anteriores tem mais valor — e, se for a primeira, é onde
+ * vale explicar que existe um histórico sendo formado.
+ */
+function AvisoHistorico() {
+  const { perfil, historico, carregando } = usePerfil();
+  if (carregando) return null;
+
+  const primeira = historico.length <= 1;
+
+  return (
+    <div className="no-imprimir mx-auto mt-8 w-full max-w-[980px] px-5">
+      <div className="panel flex flex-wrap items-center justify-between gap-4 p-5">
+        <div>
+          <p className="text-[0.92rem] font-medium">
+            {primeira
+              ? "Esta correção ficou guardada neste aparelho"
+              : `${historico.length} redações no seu histórico`}
+          </p>
+          <p className="mt-1 max-w-[52ch] text-[0.82rem] leading-relaxed text-muted-foreground">
+            {primeira
+              ? "Na próxima, a área de desempenho começa a mostrar em qual competência você subiu e qual erro voltou."
+              : "Veja o que subiu, o que travou e o erro que insiste em aparecer."}
+          </p>
+        </div>
+        <Link
+          to={perfil ? "/desempenho" : "/perfil"}
+          className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-[0.85rem] font-medium transition-colors hover:border-primary/50 hover:bg-secondary/60"
+        >
+          {perfil ? (
+            <>
+              <TrendingUp className="h-4 w-4" />
+              Ver meu desempenho
+            </>
+          ) : (
+            <>
+              <User className="h-4 w-4" />
+              Criar meu perfil
+            </>
+          )}
+        </Link>
+      </div>
+    </div>
   );
 }
 

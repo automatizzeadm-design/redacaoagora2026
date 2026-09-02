@@ -277,3 +277,94 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   IMPRESSÃO — o "Baixar PDF" da tela de resultado
+   ============================================================
+
+   Não há biblioteca de PDF: o botão chama a impressão do navegador, e o PDF
+   sai do diálogo "Salvar como PDF". Funciona no celular e no computador, não
+   pesa no bundle e a correção não sai do aparelho.
+
+   Duas coisas precisam mudar em relação à tela:
+
+   1. O tema é escuro. Impresso, isso gasta uma carga de tinta e vira uma
+      página cinza — vários navegadores simplesmente descartam os fundos. Então
+      a paleta é invertida aqui, redefinindo as variáveis: fundo branco, texto
+      preto, e as cores de nota escurecidas o bastante para terem contraste no
+      papel branco.
+
+   2. As quatro abas do resultado (Panorama, Espelho, Correções, Plano) são
+      montadas o tempo todo com `forceMount` justamente para isto: no papel não
+      existe clicar, então todas são exibidas em sequência e a barra de abas
+      desaparece. Sem isso o PDF sairia com um quarto da correção.
+*/
+@media print {
+  :root {
+    --background: white;
+    --foreground: oklch(0.15 0 0);
+    --card: white;
+    --card-foreground: oklch(0.15 0 0);
+    --primary: oklch(0.45 0.14 150);
+    --primary-foreground: white;
+    --secondary: oklch(0.96 0 0);
+    --secondary-foreground: oklch(0.15 0 0);
+    --muted: oklch(0.96 0 0);
+    --muted-foreground: oklch(0.42 0 0);
+    --border: oklch(0.85 0 0);
+    --paper: white;
+    --paper-ink: oklch(0.15 0 0);
+    --paper-line: oklch(0.9 0 0);
+
+    --nota-critica: oklch(0.48 0.19 25);
+    --nota-baixa: oklch(0.5 0.14 55);
+    --nota-media: oklch(0.5 0.12 90);
+    --nota-alta: oklch(0.44 0.13 145);
+    --nota-elite: oklch(0.42 0.13 165);
+
+    --shadow-lift: none;
+    --shadow-paper: none;
+  }
+
+  body {
+    background: white !important;
+    background-image: none !important;
+    color: var(--foreground);
+  }
+
+  /* Navegação, botões e enfeites não vão para o papel */
+  header,
+  nav,
+  .no-imprimir,
+  [role="tablist"] {
+    display: none !important;
+  }
+
+  /* Todas as abas de uma vez, em sequência */
+  [role="tabpanel"] {
+    display: block !important;
+    break-before: page;
+    margin-top: 0 !important;
+  }
+
+  [role="tabpanel"]:first-of-type {
+    break-before: auto;
+  }
+
+  /* Blocos de análise não devem ser partidos ao meio entre páginas */
+  .panel,
+  article,
+  section {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  a {
+    text-decoration: none;
+    color: inherit;
+  }
+
+  @page {
+    margin: 14mm;
+  }
+}
