@@ -156,10 +156,9 @@ function Placar({
   tema: Correcao["tema"];
   onNova: () => void;
 }) {
+  // O orbe desfocado que ficava no canto saiu junto com o tema escuro.
   return (
     <section className="animate-rise panel relative overflow-hidden p-6 sm:p-8">
-      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
-
       <div className="relative flex flex-wrap items-end justify-between gap-6">
         <div>
           <p className="eyebrow">Sua nota estimada</p>

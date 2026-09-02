@@ -1,15 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  Camera,
-  Loader2,
-  Scale,
-  ScanLine,
-  Sparkles,
-  TrendingUp,
-  Upload,
-  User,
-} from "lucide-react";
+import { Camera, Loader2, TrendingUp, Upload, User } from "lucide-react";
 
 import { Resultado } from "@/components/Resultado";
 import { corrigirRedacao } from "@/lib/corretor";
@@ -132,39 +123,14 @@ function Pagina() {
 
   return (
     <main className="min-h-screen">
-      <div className="mx-auto w-full max-w-[980px] px-5 pb-24 pt-16 sm:pt-24">
-        <header className="animate-rise text-center">
-          <p className="eyebrow">Correção de redação ENEM</p>
-          <h1 className="mx-auto mt-4 max-w-[16ch] text-balance text-[2.6rem] leading-[1.02] sm:text-[3.6rem]">
-            Sua redação corrigida como a banca corrige
-          </h1>
-          <p className="mx-auto mt-5 max-w-[54ch] text-[1rem] leading-relaxed text-muted-foreground">
-            Tire uma foto da folha. Em minutos você recebe as cinco competências, os pontos que
-            dependem de qual corretor pegar, e o seu texto reescrito no nível da nota 1000.
-          </p>
-        </header>
-
-        {/* Os três diferenciais, ditos sem enrolação */}
-        <div className="animate-rise mt-12 grid gap-3 sm:grid-cols-3">
-          <Pilar
-            icone={<Scale className="h-4 w-4" />}
-            titulo="Dois corretores, não um"
-            texto="No ENEM sua redação é lida por dois. Mostramos onde eles discordariam — é exatamente onde seu texto está frágil."
-          />
-          <Pilar
-            icone={<Sparkles className="h-4 w-4" />}
-            titulo="Seu texto, elevado"
-            texto="Não é redação modelo de outra pessoa. É o seu parágrafo, com o seu argumento, escrito no nível do 1000."
-          />
-          <Pilar
-            icone={<ScanLine className="h-4 w-4" />}
-            titulo="Risco de banca"
-            texto="Letra, linhas e margens lidos da foto. Se a máquina tropeça para ler, o corretor humano também."
-          />
-        </div>
-
+      {/*
+        Sem texto de propaganda no topo: isto é o app, não a página de vendas.
+        A tela abre no que a estudante veio fazer — mandar a foto da folha.
+        A coluna é estreita de propósito; o formulário inteiro cabe sem rolar.
+      */}
+      <div className="mx-auto w-full max-w-[620px] px-5 pb-24 pt-8 sm:pt-14">
         {/* Envio */}
-        <section className="animate-rise panel mt-10 p-5 sm:p-7">
+        <section className="animate-rise panel p-5 sm:p-7">
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -222,12 +188,13 @@ function Pagina() {
               Tema da proposta{" "}
               <span className="font-normal text-muted-foreground/60">(opcional)</span>
             </label>
+            {/* Linha, não caixa: campo escrito sobre a folha, como na prova. */}
             <input
               id="tema"
               value={tema}
               onChange={(e) => setTema(e.target.value)}
               placeholder="Ex.: Desafios para a valorização de comunidades e povos tradicionais no Brasil"
-              className="w-full rounded-xl border border-input bg-background px-4 py-3 text-[0.9rem] outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-primary/60 focus:ring-2 focus:ring-ring"
+              className="w-full border-0 border-b border-input bg-transparent px-0 py-2 text-[0.9rem] outline-none transition-colors placeholder:text-muted-foreground/45 focus:border-primary focus:ring-0"
             />
             <p className="mt-1.5 text-[0.76rem] text-muted-foreground">
               {temaSorteado ? (
@@ -264,6 +231,14 @@ function Pagina() {
             Corrigir minha redação
           </button>
         </section>
+
+        {/*
+          O que os três cartões de diferencial diziam, em uma linha. O conteúdo
+          continua valendo; o formato de propaganda é que saiu.
+        */}
+        <p className="mt-5 text-center text-[0.78rem] leading-relaxed text-muted-foreground">
+          Dois corretores · seu texto reescrito · risco de banca lido da foto
+        </p>
       </div>
     </main>
   );
@@ -318,26 +293,6 @@ function AvisoHistorico() {
   );
 }
 
-function Pilar({
-  icone,
-  titulo,
-  texto,
-}: {
-  icone: React.ReactNode;
-  titulo: string;
-  texto: string;
-}) {
-  return (
-    <article className="panel p-5">
-      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/12 text-primary">
-        {icone}
-      </span>
-      <h3 className="mt-3 text-[1rem]">{titulo}</h3>
-      <p className="mt-1.5 text-[0.84rem] leading-relaxed text-muted-foreground">{texto}</p>
-    </article>
-  );
-}
-
 /* ---------------- Leitura em andamento ---------------- */
 
 const ETAPAS = [
@@ -370,8 +325,8 @@ function Lendo({ preview }: { preview: string | null }) {
               alt=""
               className="max-h-[300px] w-auto rounded-xl opacity-70 grayscale"
             />
-            {/* A varredura percorrendo a folha */}
-            <div className="animate-sweep pointer-events-none absolute inset-x-0 h-1/2 bg-[linear-gradient(to_bottom,transparent,oklch(0.86_0.19_122/0.18)_60%,oklch(0.86_0.19_122/0.55))]" />
+            {/* A varredura percorrendo a folha, na cor da caneta de correção */}
+            <div className="animate-sweep pointer-events-none absolute inset-x-0 h-1/2 bg-[linear-gradient(to_bottom,transparent,oklch(0.53_0.19_29/0.14)_60%,oklch(0.53_0.19_29/0.45))]" />
           </div>
         )}
 

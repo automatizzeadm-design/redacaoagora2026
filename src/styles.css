@@ -7,15 +7,19 @@
 /*
  * Design system — Redação Agora.
  *
- * A metáfora é a sala de prova: fundo de tinta escura, e a redação aparece
- * como papel de verdade — creme, quente, com pauta. O contraste entre a
- * escuridão da interface e o papel claro é o que organiza a tela inteira:
- * o que é o texto DELA sempre aparece sobre papel; o que é análise nossa
- * aparece sobre tinta.
+ * A metáfora é a mesa de correção: a página inteira é papel, e a análise entra
+ * por cima dela como um corretor escreve — a vermelho. O texto da estudante
+ * aparece sobre uma folha mais clara que o fundo, como uma folha solta apoiada
+ * sobre a mesa.
  *
- * A escala de nota tem cor própria (crítica → alta), usada com consistência
- * em barras, medalhas e badges, para que a leitora aprenda a ler o painel
- * de relance.
+ * Três coisas são deliberadamente evitadas aqui, porque são o que faz uma
+ * interface parecer gerada em série: fundo escuro com acento neon, gradiente
+ * radial atrás do conteúdo e sombra colorida difusa. No lugar delas: papel
+ * chapado, fios finos e uma cor só de destaque.
+ *
+ * A escala de nota (crítica → elite) tem cor própria, usada com consistência em
+ * barras, medalhas e etiquetas, para que a leitora aprenda a ler de relance.
+ * Todos os tons são escuros o bastante para funcionarem como texto sobre papel.
  */
 
 @theme inline {
@@ -72,59 +76,73 @@
   --color-sidebar-border: var(--border);
   --color-sidebar-ring: var(--ring);
 
+  /*
+   * Fraunces no display: serifada quente, com a mesma temperatura do papel.
+   * Libre Franklin no texto: desenhada a partir da Franklin Gothic, de jornal —
+   * entra no lugar da Space Grotesk, que é das fontes mais repetidas em
+   * interface gerada e puxava o conjunto para a cara de modelo pronto.
+   * Mono só nos números: nota é para ser comparada em coluna, não lida.
+   */
   --font-display: "Fraunces", ui-serif, Georgia, serif;
-  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Libre Franklin", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
 :root {
-  --radius: 0.75rem;
+  /* Papel não tem canto de 12px. O raio encolheu junto com a metáfora. */
+  --radius: 0.5rem;
 
-  /* Tinta: quase preto com fundo azul, não cinza neutro */
-  --background: oklch(0.16 0.021 258);
-  --foreground: oklch(0.95 0.008 250);
+  /* Papel: bege quente, o tom de uma folha de prova sob luz de sala */
+  --background: oklch(0.945 0.011 82);
+  --foreground: oklch(0.21 0.008 60);
 
-  --card: oklch(0.2 0.024 258);
-  --card-foreground: oklch(0.95 0.008 250);
-  --popover: oklch(0.19 0.023 258);
-  --popover-foreground: oklch(0.95 0.008 250);
+  /* Painéis são folhas soltas sobre a mesa: mais claros que o fundo */
+  --card: oklch(0.985 0.005 85);
+  --card-foreground: oklch(0.21 0.008 60);
+  --popover: oklch(0.99 0.004 85);
+  --popover-foreground: oklch(0.21 0.008 60);
 
-  /* Lima elétrica — o acento de ação. Nada de roxo genérico. */
-  --primary: oklch(0.86 0.19 122);
-  --primary-foreground: oklch(0.17 0.03 140);
+  /* Vermelho de caneta de corretor — a única cor de ação da interface */
+  --primary: oklch(0.53 0.19 29);
+  --primary-foreground: oklch(0.99 0.004 85);
 
-  --secondary: oklch(0.26 0.026 258);
-  --secondary-foreground: oklch(0.95 0.008 250);
+  --secondary: oklch(0.9 0.013 82);
+  --secondary-foreground: oklch(0.21 0.008 60);
 
-  --muted: oklch(0.25 0.022 258);
-  --muted-foreground: oklch(0.68 0.017 255);
+  --muted: oklch(0.91 0.012 82);
+  --muted-foreground: oklch(0.49 0.011 70);
 
-  --accent: oklch(0.28 0.03 258);
-  --accent-foreground: oklch(0.95 0.008 250);
+  --accent: oklch(0.88 0.015 82);
+  --accent-foreground: oklch(0.21 0.008 60);
 
-  --destructive: oklch(0.62 0.2 22);
-  --destructive-foreground: oklch(0.98 0.005 250);
+  --destructive: oklch(0.5 0.2 27);
+  --destructive-foreground: oklch(0.99 0.004 85);
 
-  --border: oklch(0.3 0.024 258);
-  --input: oklch(0.32 0.026 258);
-  --ring: oklch(0.86 0.19 122 / 55%);
+  --border: oklch(0.855 0.012 80);
+  --input: oklch(0.82 0.013 80);
+  --ring: oklch(0.53 0.19 29 / 35%);
 
-  /* O papel: onde o texto dela sempre aparece */
-  --paper: oklch(0.955 0.021 88);
-  --paper-ink: oklch(0.26 0.03 265);
-  --paper-line: oklch(0.86 0.03 240);
-  --signal: oklch(0.86 0.19 122);
+  /* A folha da estudante: mais branca que a mesa, com pauta azul de caderno */
+  --paper: oklch(0.995 0.003 90);
+  --paper-ink: oklch(0.24 0.02 265);
+  --paper-line: oklch(0.89 0.03 240);
+  --signal: oklch(0.53 0.19 29);
 
-  /* Escala de nota */
-  --nota-critica: oklch(0.63 0.2 25);
-  --nota-baixa: oklch(0.72 0.16 55);
-  --nota-media: oklch(0.82 0.15 90);
-  --nota-alta: oklch(0.78 0.16 145);
-  --nota-elite: oklch(0.85 0.18 165);
+  /*
+   * Escala de nota. Todos escuros o bastante para servirem como TEXTO sobre
+   * papel, não só como preenchimento de barra — na paleta escura anterior
+   * eram claros, e invertidos sumiriam no fundo.
+   */
+  --nota-critica: oklch(0.47 0.19 22);
+  --nota-baixa: oklch(0.53 0.14 52);
+  --nota-media: oklch(0.55 0.12 82);
+  --nota-alta: oklch(0.48 0.12 148);
+  --nota-elite: oklch(0.42 0.11 165);
 
-  --shadow-lift: 0 24px 60px -28px oklch(0.05 0.02 258 / 0.9);
+  /* Sombras de objeto sobre mesa: curtas e neutras, sem brilho colorido */
+  --shadow-lift: 0 10px 24px -14px oklch(0.3 0.02 60 / 0.34);
   --shadow-paper:
-    0 1px 0 oklch(0.7 0.03 88 / 0.5), 0 22px 50px -24px oklch(0.05 0.02 258 / 0.85);
+    0 1px 0 oklch(0.8 0.02 85 / 0.7), 0 14px 28px -18px oklch(0.3 0.02 60 / 0.4);
 }
 
 @layer base {
@@ -133,11 +151,8 @@
   }
 
   body {
+    /* Papel chapado. O gradiente radial que ficava aqui era decoração pura. */
     background-color: var(--color-background);
-    background-image:
-      radial-gradient(70% 45% at 50% -10%, oklch(0.3 0.06 150 / 0.16), transparent 62%),
-      radial-gradient(50% 40% at 100% 0%, oklch(0.32 0.05 258 / 0.24), transparent 60%);
-    background-attachment: fixed;
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -160,10 +175,15 @@
   border-radius: var(--radius-2xl);
 }
 
-/* A folha de redação — sempre que o texto dela aparece */
+/*
+ * A folha de redação — sempre que o texto dela aparece.
+ * Como a página inteira já é papel, a folha se distingue por ser mais branca
+ * que a mesa e por ter um fio de contorno; a sombra sozinha não bastaria.
+ */
 @utility sheet {
   background-color: var(--paper);
   color: var(--paper-ink);
+  border: 1px solid oklch(0.87 0.012 82);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-paper);
 }
@@ -189,24 +209,28 @@
   color: var(--muted-foreground);
 }
 
-/* Marca-texto sobre o papel, para destacar trechos citados */
+/*
+ * Marca-texto sobre o papel. Amarelo de marcador de verdade — sobre papel
+ * claro, o verde da paleta antiga não teria contraste nenhum.
+ */
 @utility marker {
   background-image: linear-gradient(
     to top,
-    oklch(0.86 0.19 122 / 0.34) 0%,
-    oklch(0.86 0.19 122 / 0.34) 44%,
+    oklch(0.92 0.16 96 / 0.62) 0%,
+    oklch(0.92 0.16 96 / 0.62) 44%,
     transparent 44%
   );
 }
 
+/* O trecho com problema: como o corretor marca, a vermelho e ondulado */
 @utility marker-erro {
   background-image: linear-gradient(
     to top,
-    oklch(0.63 0.2 25 / 0.26) 0%,
-    oklch(0.63 0.2 25 / 0.26) 44%,
+    oklch(0.53 0.19 29 / 0.14) 0%,
+    oklch(0.53 0.19 29 / 0.14) 44%,
     transparent 44%
   );
-  text-decoration: underline wavy oklch(0.63 0.2 25 / 0.55);
+  text-decoration: underline wavy oklch(0.53 0.19 29 / 0.7);
   text-underline-offset: 3px;
 }
 
@@ -286,50 +310,28 @@
    sai do diálogo "Salvar como PDF". Funciona no celular e no computador, não
    pesa no bundle e a correção não sai do aparelho.
 
-   Duas coisas precisam mudar em relação à tela:
+   Desde que a interface virou papel claro, a paleta já serve para o papel de
+   verdade — o bloco que invertia as cores aqui deixou de ser necessário. Resta
+   o que é específico do meio impresso:
 
-   1. O tema é escuro. Impresso, isso gasta uma carga de tinta e vira uma
-      página cinza — vários navegadores simplesmente descartam os fundos. Então
-      a paleta é invertida aqui, redefinindo as variáveis: fundo branco, texto
-      preto, e as cores de nota escurecidas o bastante para terem contraste no
-      papel branco.
-
-   2. As quatro abas do resultado (Panorama, Espelho, Correções, Plano) são
-      montadas o tempo todo com `forceMount` justamente para isto: no papel não
-      existe clicar, então todas são exibidas em sequência e a barra de abas
-      desaparece. Sem isso o PDF sairia com um quarto da correção.
+   As quatro abas do resultado (Panorama, Espelho, Correções, Plano) são
+   montadas o tempo todo com forceMount justamente para isto: no papel não
+   existe clicar, então todas são exibidas em sequência, cada uma começando em
+   página nova, e a barra de abas desaparece. Sem isso o PDF sairia com um
+   quarto da correção.
 */
 @media print {
   :root {
+    /* Só o fundo vira branco puro: papel bege gastaria tinta à toa. */
     --background: white;
-    --foreground: oklch(0.15 0 0);
     --card: white;
-    --card-foreground: oklch(0.15 0 0);
-    --primary: oklch(0.45 0.14 150);
-    --primary-foreground: white;
-    --secondary: oklch(0.96 0 0);
-    --secondary-foreground: oklch(0.15 0 0);
-    --muted: oklch(0.96 0 0);
-    --muted-foreground: oklch(0.42 0 0);
-    --border: oklch(0.85 0 0);
     --paper: white;
-    --paper-ink: oklch(0.15 0 0);
-    --paper-line: oklch(0.9 0 0);
-
-    --nota-critica: oklch(0.48 0.19 25);
-    --nota-baixa: oklch(0.5 0.14 55);
-    --nota-media: oklch(0.5 0.12 90);
-    --nota-alta: oklch(0.44 0.13 145);
-    --nota-elite: oklch(0.42 0.13 165);
-
     --shadow-lift: none;
     --shadow-paper: none;
   }
 
   body {
     background: white !important;
-    background-image: none !important;
-    color: var(--foreground);
   }
 
   /* Navegação, botões e enfeites não vão para o papel */
