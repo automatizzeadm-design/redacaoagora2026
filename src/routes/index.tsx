@@ -74,11 +74,11 @@ function Pagina() {
     if (!arquivo) return;
     setEstado({ fase: "lendo" });
     try {
-      const base64 = await lerBase64(arquivo);
+      const { base64, mediaType } = await prepararImagem(arquivo);
       const correcao = await corrigirRedacao({
         data: {
           imagemBase64: base64,
-          mediaType: arquivo.type,
+          mediaType,
           ...(tema.trim() ? { tema: tema.trim() } : {}),
         },
       });
@@ -357,6 +357,59 @@ function Lendo({ preview }: { preview: string | null }) {
 }
 
 /* ---------------- Utilidades ---------------- */
+
+/**
+ * Prepara a foto antes de enviar: corrige a rotação, reduz e recomprime.
+ *
+ * Três motivos, em ordem de importância:
+ *
+ * 1. LIMITE DA API. O limite é de 10 MB já em base64, e base64 infla o arquivo
+ *    em cerca de um terço. Uma foto de 8 MB — que o formulário aceitava —
+ *    chega perto de 11 MB codificada e seria recusada. Reduzir aqui tira o
+ *    problema da frente em vez de empurrá-lo para uma mensagem de erro.
+ *
+ * 2. QUALIDADE NÃO SE PERDE. A API reduz qualquer imagem para 2576 px no lado
+ *    maior antes de olhar para ela. Mandar 4032 px gasta upload e não acrescenta
+ *    um pixel de nitidez à leitura da letra.
+ *
+ * 3. ROTAÇÃO. Foto de celular guarda a orientação em metadado, e quem não lê
+ *    esse metadado recebe a folha deitada. `imageOrientation: "from-image"`
+ *    aplica a rotação antes de desenhar — uma redação de lado atrapalha a
+ *    leitura da letra tanto para a máquina quanto para uma pessoa.
+ *
+ * Se algo falhar no caminho (navegador antigo, imagem que não decodifica), o
+ * arquivo original é enviado como está: melhor tentar do que travar o envio.
+ */
+const LADO_MAXIMO = 2576;
+
+async function prepararImagem(
+  file: File,
+): Promise<{ base64: string; mediaType: string }> {
+  try {
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const maior = Math.max(bitmap.width, bitmap.height);
+    const escala = maior > LADO_MAXIMO ? LADO_MAXIMO / maior : 1;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * escala);
+    canvas.height = Math.round(bitmap.height * escala);
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("canvas indisponível");
+    // Fundo branco: PNG com transparência viraria preto ao virar JPEG.
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+
+    // 0.9 mantém a letra legível sem os artefatos que atrapalham a leitura.
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    return { base64: dataUrl.slice(dataUrl.indexOf(",") + 1), mediaType: "image/jpeg" };
+  } catch {
+    const base64 = await lerBase64(file);
+    return { base64, mediaType: file.type };
+  }
+}
 
 function lerBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
